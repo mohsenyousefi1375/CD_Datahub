@@ -1,0 +1,85 @@
+dataset:
+    environment: PROD                     # mandatory PROD/ staging / test /...
+    platform: mysql                       # mandatory
+    location: 127.0.0.1,3306              # mandatory
+    databaseName: base_api                # mandatory
+    schemaName: base_api                  # mandatory
+    tableName:  test7                   # mandatory
+    description: this table is khili khili khili important  # mandatory 
+    links:
+        link1:
+            description: this is link 1
+            link: www.test.com           
+        link2:
+            description: this is link 2
+            link: https://en.wikipedia.org/wiki/Computer        
+    ritention: unlimited                  # mandatory 
+    dataOwner:                             
+        team: ride exprience1             # mandatory
+        productManagerEmail: a@snapp.cab  # mandatory
+    createdDate: 2024-07-01               # mandatory
+    isUpdating: True                      # mandatory 
+    isDepricated: false                   # mandatory
+    columns:
+        columnName1:                                         # mandatory 
+            isPrimaryKey: true                               # mandatory 
+            physicalDataType: int32                          # mandatory  
+            isNullable: false                                # mandatory 
+            description: >                                   # mandatory
+                        This is a long description
+                        that spans multiple lines.
+                        It is written in the folded style.
+            isPartitionKey: false                            # mandatory
+            isEncrypted: false                               # mandatory
+            defaultValue: null                               # optional
+            isForeignKey: false                              # mandatory
+            parentTable: null                                # mandatory if isForeignKey = true
+            ParentColumn: null                               # mandatory if isForeignKey = true
+            definitions:                                     # mandatory if definitions are hard code
+                1: def_1
+                2: def_2
+                3: def_3
+            isComputedColumn: false                 # mandatory
+            computedColumnFormula: null             # mandatory if isComputedColumn = true
+            jsonStructure: null                     # mandatory if DataType = josn 
+        columnName2:                             # mandatory 
+            isPrimaryKey: false                        # mandatory 
+            physicalDataType: Json                  # mandatory  
+            isNullable: True                       # mandatory 
+            description: name of sb                 # mandatory 
+            isPartitionKey: false                # mandatory
+            isEncrypted: false                      # mandatory
+            defaultValue: null                      # optional
+            isForeignKey: false                     # mandatory
+            parentTable: null                       # mandatory if isForeignKey = true
+            ParentColumn: null                      # mandatory if isForeignKey = true
+            definitions: null                       # mandatory if definitions are hard code
+            isComputedColumn: false                 # mandatory
+            computedColumnFormula: null             # mandatory if isComputedColumn = true
+            jsonStructure:                          # mandatory if DataType = josn
+                objectName1:                        # mandatory 
+                    physicalDataType: int           # mandatory  
+                    isNullable: false               # mandatory 
+                    description: name of sb         # mandatory 
+                    isEncrypted: false              # mandatory
+                    defaultValue: null              # optional
+                    isForeignKey: false             # mandatory
+                    parentTable: null               # mandatory if isForeignKey = true
+                    ParentColumn: null              # mandatory if isForeignKey = true
+                    definitions:                    # mandatory if values have definitions
+                        1: def_1
+                        2: def_2
+                    isComputedColumn: false         # mandatory
+                    computedColumnFormula: null                     
+                objectName2:                        # mandatory 
+                    physicalDataType: varchar(50)   # mandatory  
+                    isNullable: false               # mandatory 
+                    description: name of sb         # mandatory 
+                    isEncrypted: false              # mandatory
+                    defaultValue: '<N>'               # optional
+                    isForeignKey: false             # mandatory
+                    parentTable: null               # mandatory if isForeignKey = true
+                    ParentColumn: null              # mandatory if isForeignKey = true
+                    definitions: null                   # mandatory if values have definitions
+                    isComputedColumn: false         # mandatory
+                    computedColumnFormula: null 
