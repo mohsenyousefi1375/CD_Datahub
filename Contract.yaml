@@ -4,7 +4,7 @@ dataset:
     location: 127.0.0.1,3306              # mandatory
     databaseName: base_api                # mandatory
     schemaName: base_api                  # mandatory
-    tableName:  test7                   # mandatory
+    tableName:  test10                   # mandatory
     description: this table is khili khili khili important  # mandatory 
     links:
         link1:

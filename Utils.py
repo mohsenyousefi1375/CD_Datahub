@@ -1,11 +1,11 @@
 from datahub.emitter.mce_builder import make_data_platform_urn, make_dataset_urn, make_dataset_urn_with_platform_instance
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
 from datahub.emitter.rest_emitter import DatahubRestEmitter
-# read-modify-write requires access to the DataHubGraph (RestEmitter is not enough)
-from datahub.ingestion.graph.client import DatahubClientConfig, DataHubGraph
-# Inlined from /metadata-ingestion/examples/library/dataset_add_documentation.py
+from datahub.ingestion.graph.client import DatahubClientConfig, DataHubGraph, DataHubGraphConfig
+from datahub.api.entities.corpuser.corpuser import CorpUser, CorpUserGenerationConfig
 import logging
 import time
+import subprocess
 # Imports for metadata model classes
 from datahub.metadata.schema_classes import (
     AuditStampClass,
@@ -32,10 +32,6 @@ from datahub.metadata.schema_classes import (
     InstitutionalMemoryMetadataClass,
 
 )
-
-import subprocess
-
-
 
 
 def check_dataset_exists (dataset_urn): 
@@ -186,7 +182,7 @@ def add_documentation_to_dataset(dataset_documentation, dataset_urn, gms_endpoin
     else:
         log.info("Documentation already exists and is identical, omitting write")
 
-def add_referenced_links_to_dataset(link_to_add, link_description, dataset_urn, gms_endpoint):
+def add_referenced_links_to_dataset(link_to_add:str, link_description:str, dataset_urn, gms_endpoint):
 
     # validate link
     if (len(link_to_add)<8):
@@ -234,3 +230,27 @@ def add_referenced_links_to_dataset(link_to_add, link_description, dataset_urn, 
 
     else:
         log.info(f"Link {link_to_add} already exists and is identical, omitting write")
+
+
+def add_datahub_user(display_name:str, user_email:str, title:str, first_name:str, last_name:str, full_name:str, gms_server ):
+
+    log = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.INFO)
+
+    user: CorpUser = CorpUser(
+        id=user_email,
+        display_name=display_name,
+        email=user_email,
+        title=title,
+        first_name=first_name,
+        last_name=last_name,
+        full_name=full_name,
+    )
+
+    # Create graph client
+    datahub_graph = DataHubGraph(DataHubGraphConfig(server=gms_server))
+    for event in user.generate_mcp(
+        generation_config=CorpUserGenerationConfig(override_editable=False)
+    ):
+        datahub_graph.emit(event)
+    log.info(f"Upserted user {user.urn}")
