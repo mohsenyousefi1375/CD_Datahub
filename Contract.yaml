@@ -14,8 +14,8 @@ dataset:
             description: this is link 2
             link: https://en.wikipedia.org/wiki/Computer        
     ritention: unlimited                  # mandatory 
-    dataOwner:                             
-        team: ride exprience1             # mandatory
+    technicalOwner:                             
+        datahub_group_name: ride exprience1             # mandatory
         productManagerEmail: a@snapp.cab  # mandatory
     createdDate: 2024-07-01               # mandatory
     isUpdating: True                      # mandatory 

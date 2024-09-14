@@ -1,4 +1,4 @@
-from datahub.emitter.mce_builder import make_data_platform_urn, make_dataset_urn, make_dataset_urn_with_platform_instance
+from datahub.emitter.mce_builder import make_data_platform_urn, make_dataset_urn, make_dataset_urn_with_platform_instance, make_user_urn, make_group_urn
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
 from datahub.emitter.rest_emitter import DatahubRestEmitter
 from datahub.ingestion.graph.client import DatahubClientConfig, DataHubGraph, DataHubGraphConfig
@@ -6,6 +6,15 @@ from datahub.api.entities.corpuser.corpuser import CorpUser, CorpUserGenerationC
 import logging
 import time
 import subprocess
+from datahub.metadata.urns import CorpUserUrn
+from typing import Optional
+
+from datahub.api.entities.corpgroup.corpgroup import (
+    CorpGroup,
+    CorpGroupGenerationConfig,
+)
+
+
 # Imports for metadata model classes
 from datahub.metadata.schema_classes import (
     AuditStampClass,
@@ -30,8 +39,15 @@ from datahub.metadata.schema_classes import (
     EditableDatasetPropertiesClass,
     InstitutionalMemoryClass,
     InstitutionalMemoryMetadataClass,
+    OwnershipClass,
+    OwnerClass,
+    OwnershipTypeClass,
 
 )
+
+
+
+
 
 
 def check_dataset_exists (dataset_urn): 
@@ -70,7 +86,7 @@ def find_datahub_data_type(physical_data_type:str):
     
     else: NullTypeClass()
 
-def extract_fileds_list(data):
+def extract_fileds_from_yaml(data):
     fields = []
     for column_name, column_information in data["dataset"]["columns"].items():
         
@@ -95,8 +111,8 @@ def extract_fileds_list(data):
 
 
 def add_dataset(data):
-    gms_server="http://localhost:8080"
-    fields = extract_fileds_list (data)
+    gms_server = "http://localhost:8080"
+    fields = extract_fileds_from_yaml (data)
     schema_name = data["dataset"]["schemaName"]
     platform = str.lower(data["dataset"]["platform"])
     dataset_name = data["dataset"]["schemaName"] + '.' + data["dataset"]["tableName"]
@@ -104,8 +120,8 @@ def add_dataset(data):
     links = data["dataset"]["links"]
     environment = str.lower( data["dataset"]["environment"] )
     platform_instance = str.replace(str.replace(str.replace(str.replace(str.replace( data["dataset"]["location"], ',', '-'), ':', '-'), '(', ''), ')', ''), '.', '_')
-    dataset_urn=make_dataset_urn_with_platform_instance(platform=platform, name=str.lower(dataset_name), env=environment, platform_instance= platform_instance)
-    
+    dataset_urn = make_dataset_urn_with_platform_instance(platform=platform, name=str.lower(dataset_name), env=environment, platform_instance= platform_instance)
+    datahub_group_name = data["dataset"]["technicalOwner"]["datahub_group_name"]
 
 
     event: MetadataChangeProposalWrapper = MetadataChangeProposalWrapper(
@@ -137,6 +153,9 @@ def add_dataset(data):
     # add documentation
     add_documentation_to_dataset(description, dataset_urn= dataset_urn, gms_endpoint=gms_server)
 
+    #add technical owner
+
+    add_dataset_owner(None, datahub_group_name, dataset_urn, gms_server, OwnershipTypeClass.TECHNICAL_OWNER)
 
 
 def add_documentation_to_dataset(dataset_documentation, dataset_urn, gms_endpoint):
@@ -232,7 +251,7 @@ def add_referenced_links_to_dataset(link_to_add:str, link_description:str, datas
         log.info(f"Link {link_to_add} already exists and is identical, omitting write")
 
 
-def add_datahub_user(display_name:str, user_email:str, title:str, first_name:str, last_name:str, full_name:str, gms_server ):
+def create_datahub_user(display_name:str, user_email:str, title:str, first_name:str, last_name:str, full_name:str, gms_server ):
 
     log = logging.getLogger(__name__)
     logging.basicConfig(level=logging.INFO)
@@ -254,3 +273,113 @@ def add_datahub_user(display_name:str, user_email:str, title:str, first_name:str
     ):
         datahub_graph.emit(event)
     log.info(f"Upserted user {user.urn}")
+
+
+def create_datahub_group(group_email:str,  display_name:str, description:str, gms_server,list_of_members:list = [], slack = None ):
+   
+    log = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.INFO)
+
+    members=[]
+
+    for i in list_of_members:
+        members.append(CorpUserUrn(i))
+
+    group = CorpGroup(
+        id = group_email,
+        owners = [str(CorpUserUrn("datahub"))],
+        members = members,
+        display_name=display_name,
+        email=group_email,
+        description = description,
+        slack=slack,
+    )
+
+    # Create graph client
+    datahub_graph = DataHubGraph(DataHubGraphConfig(server=gms_server))
+
+    for event in group.generate_mcp(
+        generation_config=CorpGroupGenerationConfig(
+            override_editable=False, datahub_graph=datahub_graph
+        )
+    ):
+        datahub_graph.emit(event)
+    log.info(f"Upserted group {group.urn}")
+
+
+ 
+def find_dataset_owner(gms_server, dataset_urn):
+
+    graph = DataHubGraph(DatahubClientConfig(server=gms_server))
+
+    # Query multiple aspects from entity
+    result = graph.get_aspects_for_entity(
+        entity_urn=dataset_urn,
+        aspects=["ownership"],
+        aspect_types=[OwnershipClass],
+    )
+
+    return result
+
+
+
+
+def add_dataset_owner(datahub_user_name, datahub_group_name, dataset_urn, gms_server, ownership_type):
+    
+    log = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.INFO)
+
+
+    # Inputs -> owner, ownership_type, dataset
+    if datahub_user_name:
+        owner_to_add = make_user_urn(datahub_user_name)
+    
+    elif datahub_group_name:
+        owner_to_add = make_user_urn(datahub_group_name)
+
+    
+    ownership_type =ownership_type #OwnershipTypeClass.TECHNICAL_OWNER
+
+
+    # Some objects to help with conditional pathways later
+    owner_class_to_add = OwnerClass(owner=owner_to_add, type=ownership_type)
+    ownership_to_add = OwnershipClass(owners=[owner_class_to_add])
+
+
+    graph = DataHubGraph(DatahubClientConfig(server=gms_server))
+
+
+    current_owners: Optional[OwnershipClass] = graph.get_aspect(
+        entity_urn=dataset_urn, aspect_type=OwnershipClass
+    )
+
+
+    need_write = False
+    if current_owners:
+        if (owner_to_add, ownership_type) not in [
+            (x.owner, x.type) for x in current_owners.owners
+        ]:
+            # owners exist, but this owner is not present in the current owners
+            current_owners.owners.append(owner_class_to_add)
+            need_write = True
+    else:
+        # create a brand new ownership aspect
+        current_owners = ownership_to_add
+        need_write = True
+
+    if need_write:
+        event: MetadataChangeProposalWrapper = MetadataChangeProposalWrapper(
+            entityUrn=dataset_urn,
+            aspect=current_owners,
+        )
+        graph.emit(event)
+        log.info(
+            f"Owner {owner_to_add}, type {ownership_type} added to dataset {dataset_urn}"
+        )
+
+    else:
+        log.info(f"Owner {owner_to_add} already exists, omitting write")
+
+
+def add_dataset_properties():
+    pass
