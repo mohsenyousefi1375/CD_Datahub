@@ -4,8 +4,12 @@ dataset:
     location: 127.0.0.1,3306              # mandatory
     databaseName: base_api                # mandatory
     schemaName: base_api                  # mandatory
-    tableName:  test10                   # mandatory
-    description: this table is khili khili khili important  # mandatory 
+    tableName:  test12                   # mandatory
+    description: >  # mandatory 
+                The data can be both quantitative and qualitative in nature. 
+                Quantitative data is in numeric form , which can be discrete that includes finite numerical values or continuous which also takes fractional 
+                values apart from finite values. For instance, the number of girls in a class can only take finite values, so it is a discrete variable, 
+                while the cost of a product is a continuous variable. 
     links:
         link1:
             description: this is link 1
@@ -15,8 +19,8 @@ dataset:
             link: https://en.wikipedia.org/wiki/Computer        
     ritention: unlimited                  # mandatory 
     technicalOwner:                             
-        datahub_group_name: ride exprience1             # mandatory
-        productManagerEmail: a@snapp.cab  # mandatory
+        datahub_group_name: driver_profile             # mandatory
+        productManagerEmail: test@snapp.cab  # mandatory
     createdDate: 2024-07-01               # mandatory
     isUpdating: True                      # mandatory 
     isDepricated: false                   # mandatory

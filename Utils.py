@@ -122,6 +122,8 @@ def add_dataset(data):
     platform_instance = str.replace(str.replace(str.replace(str.replace(str.replace( data["dataset"]["location"], ',', '-'), ':', '-'), '(', ''), ')', ''), '.', '_')
     dataset_urn = make_dataset_urn_with_platform_instance(platform=platform, name=str.lower(dataset_name), env=environment, platform_instance= platform_instance)
     datahub_group_name = data["dataset"]["technicalOwner"]["datahub_group_name"]
+    datahub_users = []
+    datahub_users.append(data["dataset"]["technicalOwner"]["productManagerEmail"])
 
 
     event: MetadataChangeProposalWrapper = MetadataChangeProposalWrapper(
@@ -153,9 +155,12 @@ def add_dataset(data):
     # add documentation
     add_documentation_to_dataset(description, dataset_urn= dataset_urn, gms_endpoint=gms_server)
 
-    #add technical owner
+    # check datahub group is exists or new to add
+    #create_datahub_group(display_name = datahub_group_name, gms_server=gms_server, list_of_members = datahub_users)
 
-    add_dataset_owner(None, datahub_group_name, dataset_urn, gms_server, OwnershipTypeClass.TECHNICAL_OWNER)
+
+    #add technical owner
+    add_dataset_owner( None,datahub_group_name, dataset_urn, gms_server, OwnershipTypeClass.TECHNICAL_OWNER)
 
 
 def add_documentation_to_dataset(dataset_documentation, dataset_urn, gms_endpoint):
@@ -275,7 +280,7 @@ def create_datahub_user(display_name:str, user_email:str, title:str, first_name:
     log.info(f"Upserted user {user.urn}")
 
 
-def create_datahub_group(group_email:str,  display_name:str, description:str, gms_server,list_of_members:list = [], slack = None ):
+def create_datahub_group( display_name:str , gms_server,list_of_members:list = [],group_email:str = None, description:str = None, slack = None ):
    
     log = logging.getLogger(__name__)
     logging.basicConfig(level=logging.INFO)
